@@ -10,9 +10,11 @@ Installation
 We reccomend using pip and virtualenv to install.
 
 ```
-$ virtualenv env
-$ . env/bin/activate
+$ virtualenv leisure
+$ cd leisure
+$ . ./bin/activate
 $ pip install -e git+git@github.com:trivio/leisure.git
+$ pip install -r src/leisure/requirements.txt 
 
 ```
 
