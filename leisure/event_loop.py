@@ -33,6 +33,15 @@ def fileno(fd):
   else:
     return fd.fileno()
 
+# Note: this is a port of a run_loop I wrote 10 years ago,
+# I've started adapting it to conform to http://www.python.org/dev/peps/pep-3156/
+# which will be implemented for Python 3.4
+# Who knows, maybe this could be used to backport this capabilities to older
+# pythons.
+
+# Anyway long story short the description and docs in this class methods
+# may 
+
 
 class EventLoop(object):
   """An event loop that provides edge-triggered notifications.
@@ -48,8 +57,7 @@ class EventLoop(object):
   the next timer (if any) will expire.
 
   We then ask the OS to put us to sleep until one or more of
-  our file descriptors has data ready to be read or written to; or
-  our timeout has expired.
+  our event sources has is ready or our timeout has expired.
 
   When we wake up it's because  one of our descriptors
   are in the ready state, a timer has expired or both.
@@ -59,46 +67,32 @@ class EventLoop(object):
   callback/delegate that it can now read or write the descriptor
   without blocking. Note: it's the responsabilty of the delegate
   to ask the EventLoop to remonitor a descriptor
+  *NOTE* Above statement is incorrect, 
 
   And that's it the loop starts over if there are any timers or
   descriptors left to be monitored.
 
   You do not need to instatiate a EventLoop, there should only be
   one per thread. To get the EventLoop for the current thread simply
-  call the class method currentLoop()
+  call current_event_loop() like so
 
-  >>> EventLoop = EventLoop.currentEventLoop()
+  >>> import event_loop
+  >>> loop = event_loop.current_event_loop()
 
   To determine if the EventLoop is running you can examine it's
   running property, in this paticular case we're not running
 
-  >>> EventLoop.running 
+  >>> loop.running 
   False
 
   To start the EventLoop you must call run(), this will block the
   thread until the EventLoop runs out of things to montior. Since we
   have nothing to montior calling run() will return right away.
-  >>> EventLoop.run()
-  >>> EventLoop.running
+  >>> loop.run()
+  >>> loop.running
   False
 
-  That's pretty boring, let's create a class that support's the
-  Timer interface and have our object called imideiatly. Timer's
-  need two attributes a timeout value, which is the in seconds (as
-  typically returned by time.time()) after which the timer's
-  timeout() method should be called.
-
-  >>> class MyTimer:
-  ...   def __init__(self):
-  ...     self.time = time.time()
-  ...     self.cancelled = self.called = False
-  ...     self.timeOutCalled = False
-  ...   def onTimeout(self):
-  ...     self.timeWhenCalled = time.time()
-  ...     self.timeOutCalled = True
-
-  >>> myTimer = MyTimer()
-
+  
   So we have a Timer, it has an attribute called timeOutCalled
   which is currently false
 
@@ -127,7 +121,7 @@ class EventLoop(object):
   ...     self.time = time.time() + .01
   ...     self.cancelled = self.called = False
   ...     self.ticks = 0
-  ...   def onTimeout(self):
+  ...   def on_timeout(self):
   ...     self.ticks += 1
   ...     if self.ticks < 10:
   ...       self.time = time.time() + .01
@@ -345,7 +339,7 @@ class EventLoop(object):
            timeout = timer.time - currentTime
            if timeout <= 0:
                  # it's expired call it
-                 timer.onTimeout()
+                 timer.on_timeout()
            else:
                  # this timer hasn't expired put it back on the list
                  heapq.heappush(self.timers, timer)
@@ -496,7 +490,7 @@ class DelayedCall:
   def __cmp__(self, other):
      return cmp(self.time, other.time)
 
-  def onTimeout(self):  
+  def on_timeout(self):  
     if not self.cancelled:
       self.func(*self.args, **self.kw)
       if self.repeatRule:

@@ -1,50 +1,51 @@
 import os
-import tempfile
-import stat
-import zipfile
-from StringIO import StringIO
+import time
 
+from .job import Job
 from . import worker
 
-def start(jobpack, raw_jobpack, callback):
-  name = jobpack.jobdict['prefix']
-  
-  path = extract_jobhome(jobpack.jobhome)
-  job_file_path = os.path.join(path, 'jobfile')
-  open(job_file_path,'w').write(raw_jobpack)
+jobs = {}
+event_loop = None
 
-  worker_path = os.path.join(path, jobpack.jobdict['worker'])
-  st = os.stat(worker_path)
-  os.chmod(worker_path, st.st_mode | stat.S_IEXEC)
+def set_event_loop(new_event_loop):
+  global event_loop
+  event_loop = new_event_loop
 
-  jobpack.jobdict['input']
-  for input in jobpack.jobdict['input']:
+def new(jobpack):
 
+  job = Job(jobpack)
+  store_with_unique_name(job)
+  handle = event_loop.call_soon(start, job)
+  return job
+
+def get(name):
+  return jobs.get(name)
+
+def store_with_unique_name(job):
+  while True:
+    name = "{}@{}".format(job.prefix, time.time())
+    if name not in jobs:
+      job.name = name
+      jobs[name] = job
+      return name
+
+def start(job):  
+  path = job.job_dir
+  for input in job.inputs:
     worker.start(
-      path,
-      worker_path,
+      job,
       dict(
         host       = "localhost",
         disco_data = os.path.join(path, "data"),
         ddfs_data  = os.path.join(path, "ddfs"),
         master     = "http://localhost:8989",
         taskid     = 0,
-        jobfile    =  job_file_path, 
+        jobfile    =  job.jobfile_path, 
         mode       = "map", 
-        jobname    = name, 
+        jobname    = job.name, 
         disco_port =  8989,
         put_port   = 8990
       ),
       input,
-      callback
     )
-
-
-def extract_jobhome(jobhome):
-  """Extract job to a tempporary directory and returns it's path"""
-
-  z = zipfile.ZipFile(StringIO(jobhome), 'r')
-  path = tempfile.mkdtemp()
-  z.extractall(path)
-  return path
 

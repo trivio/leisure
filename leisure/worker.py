@@ -8,23 +8,22 @@ from .io import puts, readuntil, readbytes
 from .event_loop import add_reader, remove_reader
 from .path import relative
 
-def start(job_home, worker_path, task, input, callback):
-  puts("Starting job in {}".format(job_home))
+def start(job, task, input):
+  puts("Starting job in {}".format(job.job_dir))
   env = os.environ.copy()
   proc  = subprocess.Popen(
-    [worker_path],
+    [job.worker_path],
     stdin=PIPE,
     stdout=PIPE,
     stderr=PIPE,
-    cwd=job_home,
+    cwd=job.job_dir,
     env=env
   )
 
-  add_reader(proc.stderr, worker_stream(proc, task, input, callback), proc.stderr)
+  add_reader(proc.stderr, worker_stream(proc, job, task, input), proc.stderr)
 
 
-
-def worker_stream(proc, task, input, callback):
+def worker_stream(proc, job, task, input):
   """
   Returns a function bound to the supplied proc suitable for interpreting
   the disco work protocol.
@@ -36,7 +35,7 @@ def worker_stream(proc, task, input, callback):
     packet, packet_reader[0] = packet_reader[0](stream)
 
     #print "<--" + str(packet),
-    r = response(proc, task, input, packet, callback)
+    r = response(proc, job, task, input, packet)
     #print "--> {}".format(r)
     if r is not None:
       proc.stdin.write(r)
@@ -80,7 +79,7 @@ def done(proc):
   remove_reader(proc.stderr)
   return msg("OK", "ok")  
 
-def response(proc, task, input, packet, callback):
+def response(proc, job, task, input, packet):
   type,size,payload = packet
   payload = json.loads(payload)
   
@@ -90,7 +89,7 @@ def response(proc, task, input, packet, callback):
     puts(payload)
     return msg("OK","")
   elif type in ('ERROR','FATAL'):
-    callback(type)
+    job.status = "dead"
     done(proc)
     puts("{}\n{}".format(type, payload))
     return None
@@ -106,7 +105,7 @@ def response(proc, task, input, packet, callback):
     puts("{} {} {}".format(*packet))
     return  msg("OK", 'ok')
   elif type == "DONE":
-    callback("ready")
+    job.status = "ready"
     return done(proc)
   else:
     pass
