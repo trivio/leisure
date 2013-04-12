@@ -27,6 +27,7 @@ setup(
       "Intended Audience :: Developers",
       "Topic :: Software Development",
   ],
+  install_requires=["disco"],
   entry_points={
     'console_scripts': [
       'leisure = leisure:main'
