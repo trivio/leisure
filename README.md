@@ -13,7 +13,7 @@ We reccomend using pip and virtualenv to install.
 $ virtualenv leisure
 $ cd leisure
 $ . ./bin/activate
-$ pip install -e git+git@github.com:trivio/leisure.git
+$ pip install -e git+git@github.com:trivio/leisure.git#egg=leisure
 $ pip install -r src/leisure/requirements.txt 
 
 ```

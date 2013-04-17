@@ -29,10 +29,13 @@ from __future__ import absolute_import
 import sys
 
 from .disco import run_script
+from . import shuffle
+
+import tempfile
 
 def main():
   script = sys.argv[1]
-  run_script(script)
+  run_script(script, tempfile.mkdtemp())
 
 
 if __name__ == "__main__":

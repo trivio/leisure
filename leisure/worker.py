@@ -4,26 +4,27 @@ from subprocess import PIPE
 import subprocess
 import json
 
-from .io import puts, readuntil, readbytes
+from .io import puts, indent, readuntil, readbytes
 from .event_loop import add_reader, remove_reader
 from .path import relative
 
-def start(job, task, input):
-  puts("Starting job in {}".format(job.job_dir))
+def start(task):
+  puts("Starting job in {}".format(task.job_dir))
+  indent("inputs {}".format(task.input))
   env = os.environ.copy()
   proc  = subprocess.Popen(
-    [job.worker_path],
+    [task.worker_path],
     stdin=PIPE,
     stdout=PIPE,
     stderr=PIPE,
-    cwd=job.job_dir,
+    cwd=task.job_dir,
     env=env
   )
 
-  add_reader(proc.stderr, worker_stream(proc, job, task, input), proc.stderr)
+  add_reader(proc.stderr, worker_stream(proc, task), proc.stderr)
 
 
-def worker_stream(proc, job, task, input):
+def worker_stream(proc, task):
   """
   Returns a function bound to the supplied proc suitable for interpreting
   the disco work protocol.
@@ -35,7 +36,7 @@ def worker_stream(proc, job, task, input):
     packet, packet_reader[0] = packet_reader[0](stream)
 
     #print "<--" + str(packet),
-    r = response(proc, job, task, input, packet)
+    r = response(proc, task, packet)
     #print "--> {}".format(r)
     if r is not None:
       proc.stdin.write(r)
@@ -79,7 +80,7 @@ def done(proc):
   remove_reader(proc.stderr)
   return msg("OK", "ok")  
 
-def response(proc, job, task, input, packet):
+def response(proc, task, packet):
   type,size,payload = packet
   payload = json.loads(payload)
   
@@ -88,24 +89,28 @@ def response(proc, job, task, input, packet):
   elif type == 'MSG':
     puts(payload)
     return msg("OK","")
-  elif type in ('ERROR','FATAL'):
-    job.status = "dead"
+  elif type == ('ERROR','FATAL'):
+    # todo: fail, the task
+    task.job.status = "dead"
     done(proc)
     puts("{}\n{}".format(type, payload))
     return None
   elif type == 'TASK':
-    return msg('TASK',task)
+    return msg('TASK',task.info())
+
   elif type == "INPUT":
      return msg('INPUT', [
       u'done', [
-        [0, u'ok', [[0, input]]]
+        [0, u'ok', [[0, task.input]]]
       ]
     ]) 
   elif type == "OUTPUT":
     puts("{} {} {}".format(*packet))
+    task.add_output(*payload)
+
     return  msg("OK", 'ok')
   elif type == "DONE":
-    job.status = "ready"
+    task.done()
     return done(proc)
   else:
     pass

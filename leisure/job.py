@@ -4,22 +4,38 @@ from datetime import datetime
 import os
 import stat
 
-import tempfile
+
 import zipfile
 from StringIO import StringIO
 
 from disco.job import JobPack
-
+import leisure
 
 class Job(object):
   def __init__(self, jobpack):
     self.jobpack = JobPack.load(StringIO(jobpack))
-    self.job_dir = extract_jobhome(self.jobpack.jobhome)
+    self.host = "localhost"
+    self.data_root = os.environ['DISCO_DATA']
+
+    self.name = "{}@{}".format(self.prefix, leisure.disco.timestamp())
+
+
+    
+    self.home = os.path.join(
+      self.host, 
+      leisure.disco.hex_hash(self.name), 
+      self.name
+    )
+    self.job_dir = extract_jobhome(
+      os.path.join(self.data_root, self.home),
+      self.jobpack.jobhome
+    )
+
     self.save_jobfile(jobpack)
     self.ensure_worker_executable()
     self.results = []
     self.status = "active"
-    self.name = self.prefix
+  
 
   @property
   def prefix(self):
@@ -40,6 +56,16 @@ class Job(object):
   @property
   def jobfile_path(self):
     return os.path.join(self.job_dir, "jobfile")
+
+  @property
+  def has_map_phase(self):
+    """Return true if the job has a map phase"""
+    return self.jobpack.jobdict['map?']
+
+  @property
+  def has_reduce_phase(self):
+    """Return true if the job has a map phase"""
+    return self.jobpack.jobdict['reduce?']
 
   def info(self):
     return dict(
@@ -68,10 +94,9 @@ class Job(object):
     os.chmod(worker_path, st.st_mode | stat.S_IEXEC)
 
 
-def extract_jobhome(jobhome):
+def extract_jobhome(path, jobhome):
   """Extract job to a tempporary directory and returns it's path"""
 
   z = zipfile.ZipFile(StringIO(jobhome), 'r')
-  path = tempfile.mkdtemp()
   z.extractall(path)
   return path

@@ -10,6 +10,12 @@ def puts(msg, write=sys.stdout.write):
     write(line)
     write('\n')
 
+def indent(msg, write=sys.stdout.write):
+  for line in msg.splitlines():
+    write("     ")
+    write(line)
+    write('\n')
+
 def readuntil(stream,term):
   b = bytearray()
   while True:

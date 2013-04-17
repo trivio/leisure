@@ -5,25 +5,30 @@ import os
 from StringIO import StringIO
 from urlparse import urlparse, parse_qs
 import threading
+import re
 from functools import partial
-
+import hashlib
+from datetime import datetime
+import time
 
 import disco
-
 from disco.core import Disco
-
 
 from .io import puts
 from .   import event_loop
 from .   import job_control
 
-def run_script(script):
+disco_url_regex = re.compile(".*?://.*?/disco/(.*)")
+
+def run_script(script, data_root):
   loop = start_event_loop()
   job_control.set_event_loop(loop)
   try:
     patch_disco()
 
     os.environ['DISCO_HOME'] = disco.__path__[0]
+    os.environ['DISCO_DATA'] = data_root
+
     globals_ = {
       "__name__" : "__main__",
       "__file__" : script,
@@ -100,4 +105,33 @@ def get_results():
     (job.name, [job.status, job.results]) for  job in jobs
   ])
 
- 
+
+def disco_url_path(url):
+  return disco_url_regex.match(url).group(1)
+
+def job_home(job_name, root):
+  return  os.path.join(root, hex_hash(job_name), job_name)
+
+def job_url(host, job_name):
+  return os.path.join("disco", host, hex_hash(job_name), job_name)
+
+def hex_hash(path):
+  """
+  Return the first 2 hex digits of the md5 of the given path.
+  Suitable for creating sub dirs to break up a large directory
+  """
+
+  return hashlib.md5(path).hexdigest()[:2]
+
+
+def timestamp(dt=None):
+  """
+  Return a timestamp in the format of hex(megasecconds)-hex(seconds)-hex(microseconds)
+
+  The timestamp should be monotonically increasing and hence usable as a uuid
+  """
+  if dt is None:
+    dt = datetime.utcnow()
+  mega, seconds = map(int, divmod(time.mktime(dt.timetuple()), 10**6))
+  return "{:x}-{:x}-{:x}".format(mega, seconds, dt.microsecond) 
+

@@ -12,8 +12,14 @@ def stop():
   """Stops the current event loop"""
   current_event_loop().stop()
 
+def call_later(when, method, *args):
+  return current_event_loop().call_later(when, method, *args)
+
 def call_soon(method, *args):
-  return Future()
+  return current_event_loop().call_soon(method, *args)
+
+def call_soon_threadsafe(method, *args):
+  return current_event_loop().call_soon_threadsafe(method, *args)
 
 def current_event_loop():
   if not hasattr(local, 'event_loop'):
