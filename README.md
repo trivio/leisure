@@ -72,13 +72,10 @@ specified by your job via the disco worker protocol.
 Todo
 -----
 
-This is a rabidly evolving work in progress. At current time it only works 
-for the mapping phase but we hope to address it shortly.
+This is a rabidly evolving work in progress. At current time mapping and reducing work on jobs that don't store their data in ddfs.
 
 Our plans are to
 
-* Implment local shuffle and reduce
-* Implment mock DDFS
 * Support worker debugging
 * Remote submission
 * Local replay of a failed disco job from a real cluster
