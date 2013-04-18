@@ -55,6 +55,7 @@ def map_reduce(job):
     return reduce(inputs, job, _finished)
 
   def _finished(results):
+    job.results.extend(results)
     job.status = "ready"
 
   map(job.inputs, job, _reduce)
@@ -68,18 +69,47 @@ def map(inputs, job, cb):
     return run_phase(map_inputs(inputs), "map", job, cb)
 
 def map_inputs(inputs):
+  # preferred_host = leisure.disco.preferred_host
+  # def case(input):
+  #   if isinstance(input, list):
+  #     return [ (i, preferred_host(input)) for i in input ]
+  #   else:
+  #     return [(input, preferred_host(input))]
+
+  # return list(enumerate([ case(input) for input in inputs ]))
+
+
   if not hasattr(inputs, '__iter__'):
     inputs = [inputs]
 
   return inputs
 
 def reduce(inputs, job, cb):
-
+  
   if not job.has_reduce_phase:
     return event_loop.call_soon(cb, inputs)
   else:
-    return run_phase(map_inputs(inputs), "reduce", job, cb)
+    return run_phase(reduce_inputs(inputs, job.nr_reduces), "reduce", job, cb)
 
+def reduce_inputs(inputs, n_red):
+  return inputs
+  hosts = usort([ 
+    leisure.disco.preferred_host(input)
+    for input in inputs
+  ])
+
+  num_hosts = len(hosts)
+  if num_hosts == 0:
+    return []
+  else:
+    hosts_d = dict(enumerate(hosts))
+    return [
+      (task_id, [(inputs, hosts_d[task_id % n_red])])
+      for task_id in range(num_hosts) 
+    ]
+
+def usort(inputs):
+  return sorted(set(inputs))
 
 def results(job, mode, local_results, global_results, **state):
 
@@ -106,12 +136,11 @@ def run_phase(inputs, mode, job, cb):
     outstanding    = len(inputs),
     local_results  = [],
     global_results = []
-    #task_results = {}
   )
 
   for id, input in enumerate(inputs):
     task = Task(id, job, input, mode)
-    task.on('done', on_task_done,  task, state)
+    task.on('done', on_task_done,  state)
     worker.start(task)
 
 def on_task_done(task, state):

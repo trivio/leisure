@@ -35,7 +35,11 @@ import tempfile
 
 def main():
   script = sys.argv[1]
-  run_script(script, tempfile.mkdtemp())
+  if len(sys.argv) == 3:
+    data_root = sys.argv[2]
+  else:
+    data_root = tempfile.mkdtemp()
+  run_script(script, data_root)
 
 
 if __name__ == "__main__":

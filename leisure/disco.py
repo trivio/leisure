@@ -17,17 +17,24 @@ from disco.core import Disco
 from .io import puts
 from .   import event_loop
 from .   import job_control
+from .   import server
 
 disco_url_regex = re.compile(".*?://.*?/disco/(.*)")
+preferred_host_re = re.compile("^[a-zA-Z0-9]+://([^/:]*)") 
 
 def run_script(script, data_root):
   loop = start_event_loop()
   job_control.set_event_loop(loop)
   try:
     patch_disco()
+    host,port = server.start(loop)
 
     os.environ['DISCO_HOME'] = disco.__path__[0]
     os.environ['DISCO_DATA'] = data_root
+
+    os.environ['DISCO_PORT'] = str(port)
+    os.environ['DDFS_PUT_PORT'] = str(port)
+
 
     globals_ = {
       "__name__" : "__main__",
@@ -122,6 +129,12 @@ def hex_hash(path):
   """
 
   return hashlib.md5(path).hexdigest()[:2]
+
+def preferred_host(url):
+
+  m = preferred_host_re.search(url)
+  if m:
+    return m.group(1)
 
 
 def timestamp(dt=None):

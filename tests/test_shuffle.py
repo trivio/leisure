@@ -3,6 +3,7 @@ from unittest import TestCase
 from nose.tools import eq_
 import tempfile
 import shutil
+import gzip
 
 from leisure import shuffle, disco
 from leisure.path import makedirs
@@ -32,7 +33,7 @@ class TestShuffle(TestCase):
     shutil.rmtree(self.data_root)
 
   def make_part_info(self, job_home):
-    part_dir = "partitions-{}".format(shuffle.timestamp())
+    part_dir = "partitions-{}".format(disco.timestamp())
     part_path = os.path.join(
       job_home,
       part_dir
@@ -108,7 +109,7 @@ class TestShuffle(TestCase):
     filename = os.path.join(self.data_root, "blah")
     shuffle.write_index(filename, index)
 
-    read_lines = open(filename).readlines()
+    read_lines = gzip.GzipFile(filename).readlines()
     self.assertSequenceEqual(index, read_lines)
 
   def test_process_url_non_local(self): 
@@ -226,7 +227,5 @@ class TestShuffle(TestCase):
       mode="map", 
       task_results=task_results
     ))
-    import pdb; pdb.set_trace()
-    pass
 
 

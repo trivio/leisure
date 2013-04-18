@@ -1,12 +1,12 @@
 import os
 import time
-from collections import defaultdict
 
 from .path import ensure_dir
+from .event_emmiter import EventEmmiter
 import leisure
 
 
-class Task(object):
+class Task(EventEmmiter):
   def __init__(self, id, job, input, mode):
     self.id = id
     self.job = job
@@ -16,34 +16,30 @@ class Task(object):
     self.output_file_name = None
     self.output_file = None
     self.host ="localhost"
-    self.callbacks = defaultdict(list)
 
-  def on(self, event, callback, *args):
-    self.callbacks[event].append((callback, args))
+    self.disco_port = int(os.environ['DISCO_PORT'])
+    self.put_port = int(os.environ['DDFS_PUT_PORT'])
 
-  def fire(self, event):
-    for callback, args in self.callbacks[event]:
-      callback(*args)
 
   def done(self):
     if self.output_file:
       self.output_file.close()
 
-    self.fire('done')
+    self.fire('done', self)
 
   def info(self):
     path = self.job.job_dir
     return dict(
       host       = self.host,
-      disco_data = os.path.join(path, "data"),
-      ddfs_data  = os.path.join(path, "ddfs"),
-      master     = "http://localhost:8989",
+      disco_data = os.environ['DISCO_DATA'],
+      ddfs_data  = os.path.join(os.environ['DISCO_DATA'], "ddfs"),
+      master     = "http://localhost:{}".format(self.disco_port),
       taskid     = self.id,
       jobfile    = self.job.jobfile_path, 
       mode       = self.mode, 
       jobname    = self.job.name, 
-      disco_port = 8989,
-      put_port   = 8990
+      disco_port = self.disco_port,
+      put_port   = self.put_port
     )
 
   @property

@@ -89,7 +89,7 @@ def response(proc, task, packet):
   elif type == 'MSG':
     puts(payload)
     return msg("OK","")
-  elif type == ('ERROR','FATAL'):
+  elif type in ('ERROR','FATAL'):
     # todo: fail, the task
     task.job.status = "dead"
     done(proc)
@@ -99,7 +99,7 @@ def response(proc, task, packet):
     return msg('TASK',task.info())
 
   elif type == "INPUT":
-     return msg('INPUT', [
+    return msg('INPUT', [
       u'done', [
         [0, u'ok', [[0, task.input]]]
       ]
@@ -113,4 +113,4 @@ def response(proc, task, packet):
     task.done()
     return done(proc)
   else:
-    pass
+    raise RuntimeError("Uknown message type '' received".format(type))

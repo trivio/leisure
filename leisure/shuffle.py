@@ -1,4 +1,5 @@
 import os
+from gzip import GzipFile
 from itertools import groupby, chain
 
 from . import disco
@@ -76,8 +77,8 @@ def write_index(filename, lines):
   
 
   tmp_path = "{}-{}".format(filename, disco.timestamp())
-
-  output = open(tmp_path, 'w')
+  output = GzipFile(tmp_path, 'w')
+  #output = open(tmp_path, 'w')
   output.writelines(lines)
   output.close()
   os.rename(tmp_path, filename)

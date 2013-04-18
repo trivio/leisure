@@ -1,1 +1,3 @@
 git+https://github.com/trivio/disco.git#egg=disco
+http-parser
+Flask

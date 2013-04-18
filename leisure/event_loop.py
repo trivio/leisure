@@ -32,6 +32,9 @@ def add_reader(fd, callback, *args):
 def remove_reader(fd):
   current_event_loop().remove_reader(fd)
 
+def run():
+  current_event_loop().run()
+
 
 def fileno(fd):
   if isinstance(fd, int):

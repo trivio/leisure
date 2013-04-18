@@ -58,9 +58,14 @@ class Job(object):
     return os.path.join(self.job_dir, "jobfile")
 
   @property
+  def nr_reduces(self):
+    return self.jobpack.jobdict['nr_reduces']
+    
+  @property
   def has_map_phase(self):
     """Return true if the job has a map phase"""
     return self.jobpack.jobdict['map?']
+
 
   @property
   def has_reduce_phase(self):
