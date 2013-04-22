@@ -11,7 +11,7 @@ def start(event_loop):
   socket = Socket(("localhost", 0))
   socket.on("accept", new_connection)
   addr = socket.listen(5, event_loop)
-  puts("{}".format(addr))
+  puts("Accepting connections on {0}:{1}".format(*addr))
   return addr
 
 def new_connection(client):
@@ -59,12 +59,14 @@ def dispatch(env, client):
   try:
     for data in app_iter:
       if not headers_sent:
-        #puts(out),
-        sock.send(out)
+        #puts(out, fore="blue"),
+
+        client.write(out)
         headers_sent = True
 
-      sock.send(data)
+      client.write(data)
       sent += len(data)
+
   finally:
     if hasattr(app_iter, 'close'):
       app_iter.close()
