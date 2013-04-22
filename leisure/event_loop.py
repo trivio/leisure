@@ -3,6 +3,7 @@ import heapq
 import time
 import threading
 import select
+import errno
 
 local = threading.local()
 import logging
@@ -31,6 +32,10 @@ def add_reader(fd, callback, *args):
 
 def remove_reader(fd):
   current_event_loop().remove_reader(fd)
+
+def remove_writer(fd):
+  current_event_loop().remove_writer(fd)
+
 
 def run():
   current_event_loop().run()
@@ -387,27 +392,24 @@ class EventLoop(object):
 
 
      while ready2Read or ready2Write or hadErrors:
-           # note the popping alows us not get hung up doing all reads all writes
-           # at once, not sure how useful this is.
-           if ready2Read:
-                 fileno = ready2Read.pop()
-                 callback, args = self.readers[fileno]#.pop(fileno)
-                 callback(*args)
-                 #stream.canRead(stream)
-                 #stream.handleEvent(stream,Stream.HAS_BYTES_AVAILABLE)
+      # note the popping alows us not get hung up doing all reads all writes
+      # at once, not sure how useful this is.
+      if ready2Read:
+        fileno = ready2Read.pop()
+        callback, args = self.readers[fileno]#.pop(fileno)
+        callback(*args)
 
-           if ready2Write:
-                 writer = ready2Write.pop()
-                 # writers, when ready will always be ready. To
-                 # avoid an infinite loop an app that wishes to
-                 # read the data they must call addWriter()
-                 # again
-                 stream = self.writers.pop(writer, None)
-                 # stream will be none if a method called during ready2read removed
-                 # it prior to checking the writers.
-                 if stream: 
-                   stream.canWrite(stream)
-                    #stream.handleEvent(stream, Stream.HAS_SPACE_AVAILABLE)
+      if ready2Write:
+        writer = ready2Write.pop()
+        # writer may have been removed by a callback in ready to read
+        # hence the do nothing default
+        callback, args = self.writers.get(writer, (lambda:None,[]))
+        callback(*args)
+       # writers, when ready will always be ready. To
+       # avoid an infinite loop an app that wishes to
+       # read the data they must call addWriter()
+       # again
+ 
   def stop(self):
     # drop us out of the run loop on it's next pass
     self.running = False 

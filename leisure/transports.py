@@ -2,6 +2,7 @@ import fcntl
 import os
 import socket
 import errno
+from collections import deque
 
 from .event_emmiter import EventEmmiter
 class Socket(EventEmmiter):
@@ -9,15 +10,18 @@ class Socket(EventEmmiter):
     self.address = address
     self.delegate = delegate
     self.event_loop = None
+    self.read_buffer_size = 4096
+    self.write_buffer = deque()
+    self.closing = False
 
   def listen(self,  backlog, event_loop = None):
     """Listen for incoming connections on this port.
 
      backlog - the maximum number of queued connectinos
 
-     runLoop - the runLoop that will monitor this port for
+     event_loop - the event_loop that will monitor this port for
                incomming connections. Defaults to the
-               currentRunLoop if none is specified.  
+               current_event_loop() if none is specified.  
     """
 
     if type(self.address) == tuple:
@@ -70,17 +74,18 @@ class Socket(EventEmmiter):
     self.event_loop.add_reader(socket, self.can_read, socket)
 
   def close(self):
+    self.closing = True
     if self._socket:
       self.event_loop.remove_reader(self._socket)
-      self._socket = None
-      self.fire('closed', self)
+      #self._socket = None
+      #self.fire('closed', self)
 
 
   def can_read(self, client):
 
     while True:
       try:
-        buf = bytearray(4096)
+        buf = bytearray(self.read_buffer_size)
         mem = memoryview(buf)
         bytes = client.recv_into(buf)
         if bytes > 0:
@@ -97,7 +102,6 @@ class Socket(EventEmmiter):
 
           break
         else:
-          import pdb; pdb.set_trace()
           # if we receive any other socket
           # error we close the connection
           # and raise and notify our delegate
@@ -106,6 +110,24 @@ class Socket(EventEmmiter):
           #self.delegate.onError(self, e)
           self.fire('error', e)
           self.event_loop.remove_reader(client)
+
+  def write(self, data):
+    self.write_buffer.append(data)
+    self.event_loop.add_writer(self._socket, self.can_write)
+
+  def can_write(self):
+    while self.write_buffer:
+      sent = self._socket.send(self.write_buffer[0])
+      if sent == len(self.write_buffer[0]):
+        self.write_buffer.popleft()
+      else:
+        self.write_buffer[0] = buffer(self.write_buffer[0], sent)
+        break
+
+    if not self.write_buffer:
+      self.event_loop.remove_writer(self._socket)
+      if self.closing:
+        self._socket.close()
 
 
 class Stream(object):
