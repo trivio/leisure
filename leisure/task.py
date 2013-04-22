@@ -47,7 +47,12 @@ class Task(EventEmmiter):
     return self.job.job_dir
 
   @property
+  def jobenvs(self):
+    return self.job.jobpack.jobenvs
+
+  @property
   def worker_path(self):
+    print "worker path{}".format(self.job.worker_path)
     return self.job.worker_path
 
   def add_output(self, path, type, label):

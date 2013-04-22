@@ -10,8 +10,12 @@ from .path import relative
 
 def start(task):
   puts("Starting job in {}".format(task.job_dir))
-  indent("inputs {}".format(task.input))
+  indent("worker: {}".format(task.worker_path))
+  indent("inputs: {}".format(task.input))
+
   env = os.environ.copy()
+  env.update(task.jobenvs)
+
   proc  = subprocess.Popen(
     [task.worker_path],
     stdin=PIPE,
@@ -87,13 +91,16 @@ def response(proc, task, packet):
   if type == 'WORKER': 
     return  msg("OK", 'ok')
   elif type == 'MSG':
-    puts(payload)
+    puts(payload, fore="cyan")
     return msg("OK","")
   elif type in ('ERROR','FATAL'):
     # todo: fail, the task
     task.job.status = "dead"
     done(proc)
-    puts("{}\n{}".format(type, payload))
+    puts(
+      "{}\n{}".format(type, payload),
+      fore='red'
+    )
     return None
   elif type == 'TASK':
     return msg('TASK',task.info())
@@ -105,7 +112,7 @@ def response(proc, task, packet):
       ]
     ]) 
   elif type == "OUTPUT":
-    puts("{} {} {}".format(*packet))
+    puts("{} {} {}".format(*packet), fore="cyan")
     task.add_output(*payload)
 
     return  msg("OK", 'ok')
@@ -113,4 +120,4 @@ def response(proc, task, packet):
     task.done()
     return done(proc)
   else:
-    raise RuntimeError("Uknown message type '' received".format(type))
+    raise RuntimeError("Uknown message type '{}' received".format(type))
