@@ -27,6 +27,7 @@
 
 from __future__ import absolute_import
 import sys
+import os
 
 from .disco import run_script
 from . import shuffle
@@ -35,6 +36,10 @@ import tempfile
 
 def main():
   script = sys.argv[1]
+  script_dir = os.path.abspath(os.path.dirname(script))
+  if script_dir not in [os.path.abspath(p) for p in sys.path]:
+    sys.path.append(script_dir)
+
   if len(sys.argv) == 3:
     data_root = sys.argv[2]
   else:
