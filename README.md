@@ -91,3 +91,7 @@ And discuss the project on https://groups.google.com/forum/?fromgroups#!forum/di
 
 
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/trivio/leisure/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
