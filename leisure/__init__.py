@@ -29,10 +29,13 @@ from __future__ import absolute_import
 import sys
 import os
 
-from .disco import run_script
+from .disco import run as disco_run, run_script
 from . import shuffle
 
 import tempfile
+
+def run(func,*args):
+  disco_run(func,*args)
 
 def main():
   script = sys.argv[1]
@@ -41,7 +44,7 @@ def main():
     sys.path.append(script_dir)
 
   if len(sys.argv) == 3:
-    data_root = sys.argv[2]
+    data_root = os.path.abspath(sys.argv[2])
   else:
     data_root = tempfile.mkdtemp()
   run_script(script, data_root)

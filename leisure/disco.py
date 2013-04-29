@@ -22,7 +22,20 @@ from .   import server
 disco_url_regex = re.compile(".*?://.*?/disco/(.*)")
 preferred_host_re = re.compile("^[a-zA-Z0-9]+://([^/:]*)") 
 
+
+
+
 def run_script(script, data_root):
+  """
+  Run a script file with a fake disco cluster.
+  """
+  run(data_root, load_script, script)
+
+def run(data_root, func, *args):
+  """
+  Run's the given function with the environment setup
+  to fake a disco client.
+  """
   loop = start_event_loop()
   job_control.set_event_loop(loop)
   try:
@@ -34,18 +47,20 @@ def run_script(script, data_root):
 
     os.environ['DISCO_PORT'] = str(port)
     os.environ['DDFS_PUT_PORT'] = str(port)
-
-
-    globals_ = {
-      "__name__" : "__main__",
-      "__file__" : script,
-      "__builtins__" : __builtins__
-    }
-    locals_ = globals_
-    exec(compile(open(script).read(), script, 'exec'), globals_, locals_)
+    func(*args)
 
   finally:
     loop.stop()
+
+def load_script(script):  
+  globals_ = {
+    "__name__" : "__main__",
+    "__file__" : script,
+    "__builtins__" : __builtins__
+  }
+  locals_ = globals_
+  exec(compile(open(script).read(), script, 'exec'), globals_, locals_)
+
 
 
 def start_event_loop():
