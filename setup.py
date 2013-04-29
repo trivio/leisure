@@ -12,8 +12,9 @@ except IOError:
 
 setup(
   name='leisure',
-  py_modules = ['leisure'],
-  version='0.0.3',
+  #py_modules = ['leisure'],
+  packages=find_packages(),
+  version='0.0.4',
   description='local job runner for disco',
   long_description=README,
   author='Scott Robertson',
