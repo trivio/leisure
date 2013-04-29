@@ -173,11 +173,10 @@ class EventLoop(object):
     self.writers = {}
 
     reader, writer = os.pipe()
+
     self.waker = writer
     
-    self.waker_reader = Stream(reader)
-    self.add_reader(self.waker_reader, self.on_wakeup)
-
+    self.waker_reader = Stream(reader)    
 
     self.running = False
     self.timers = []
@@ -244,6 +243,7 @@ class EventLoop(object):
     if self.running:
       raise RuntimeError("EventLoop is already running.")
     else:
+      self.reset()
       self.running = True
       
     while self.running: #self._shouldRun(0):
@@ -320,11 +320,10 @@ class EventLoop(object):
         
 
   def runOnce(self):
-
      # call every fucnction that was queued via callFromThread up
      # until this point, but nothing more. If not we could be
      # stuck doing this forever and never getting to the other calls
-     
+
      pending = len(self.threadCallQueue)
      tried   = 0
      try:
@@ -376,6 +375,8 @@ class EventLoop(object):
                        select.select(self.readers.keys(), 
                                      self.writers.keys(), 
                                      [], timeout)
+
+
      except (select.error, IOError), e:
            if e.args[0] == errno.EINTR:
 
