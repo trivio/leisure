@@ -9,6 +9,8 @@ try:
 except IOError:
     README = ''
 
+with open('requirements.txt') as f:
+  required = f.read().splitlines()
 
 setup(
   name='leisure',
@@ -32,5 +34,6 @@ setup(
     'console_scripts': [
       'leisure = leisure:main'
     ]
-  }
+  },
+  install_requires=required
 )
