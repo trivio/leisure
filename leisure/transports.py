@@ -161,6 +161,9 @@ class Stream(object):
 
   def read(self, bytes):
     self.read_requests.append(bytes)
+    current_event_loop().add_reader(self, self.can_read)
+
+
          
   def read_to_end(self):
     """Keeps reading and notifying delegate until the end of stream has
@@ -217,10 +220,11 @@ class Stream(object):
           raise
 
       # notify our delegate that data's been returned
-      wait_if_short = self.delegate.on_read(self, data)
+
+      #wait_if_short = self.delegate.on_read(self, data)
       bytes_read =  len(data)
-      if bytesRead < bytes_2_read and wait_if_short:
-        self.read_requests[0] -= bytesRead
+      if bytes_read < bytes_2_read:# and wait_if_short:
+        self.read_requests[0] -= bytes_read
       else:
         # we're done with this request
         del self.read_requests[0]
