@@ -63,6 +63,7 @@ class Socket(EventEmmiter):
 
   def new_connection(self, srv_socket):
     client, addr = srv_socket.accept()
+    client.setblocking(0)
     new_socket = Socket(addr, self.delegate)
     new_socket.connection_accepted(client, self.event_loop)
     self.fire("accept", new_socket)
