@@ -32,7 +32,11 @@ setup(
       'leisure = leisure:main'
     ]
   },
+  dependency_links = [
+    'https://github.com/trivio/disco/tarball/master#egg=disco-0.4.5a'
+  ],
   install_requires=[
+    'disco',
     'http-parser',
     'Flask',
     'colorama'
