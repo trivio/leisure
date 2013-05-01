@@ -9,12 +9,9 @@ try:
 except IOError:
     README = ''
 
-with open('requirements.txt') as f:
-  required = f.read().splitlines()
 
 setup(
   name='leisure',
-  #py_modules = ['leisure'],
   packages=find_packages(),
   version='0.0.4',
   description='local job runner for disco',
@@ -35,5 +32,9 @@ setup(
       'leisure = leisure:main'
     ]
   },
-  install_requires=required
+  install_requires=[
+    'http-parser',
+    'Flask',
+    'colorama'
+  ]
 )
